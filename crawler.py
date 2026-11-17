@@ -70,7 +70,8 @@ def load_sources():
             continue
         if clean(r.get("사용", "Y")).upper() in ("N", "X", "아니오", "FALSE"):
             continue
-        out.append({"name": name, "url": url, "manual": clean(r.get("방식")) == "링크만"})
+        out.append({"name": name, "url": url, "manual": clean(r.get("방식")) == "링크만",
+                    "query": clean(r.get("검색어"))})
     return out
 
 
@@ -207,6 +208,34 @@ def parse_generic(html, source_url):
     return jobs
 
 
+def parse_korea_kr(html, source_url, query=""):
+    """정책브리핑 채용정보(나라일터 연계). 기관명(또는 제목)에 검색어가 들어간 공고만 남긴다."""
+    soup = BeautifulSoup(html, "lxml")
+    jobs = []
+    for tr in soup.select("table tbody tr"):
+        a = tr.select_one("td.subject a")
+        if not a:
+            continue
+        m = re.search(r"dataId=(\d+)", a.get("href", ""))
+        tds = tr.find_all("td")
+        if not m or len(tds) < 3:
+            continue
+        org = clean(tds[1].get_text())
+        title = clean(a.get_text())
+        if query and query not in org and query not in title:
+            continue
+        end = clean(tds[3].get_text()).replace(".", "-") if len(tds) > 3 else ""
+        jobs.append({
+            "id": m.group(1),
+            "title": title,
+            "dept": org,
+            "date": clean(tds[2].get_text()).replace(".", "-"),
+            "status": f"마감 {end}" if end else "",
+            "url": f"https://www.korea.kr/archive/recruitInfoView.do?dataId={m.group(1)}",
+        })
+    return jobs
+
+
 PARSERS = {"ui4u.go.kr": parse_ui4u, "uiuc.or.kr": parse_uiuc}
 
 
@@ -228,12 +257,23 @@ def crawl_source(src):
         p = urlparse(src["url"])
         why = _robots_reason.get(f"{p.scheme}://{p.netloc}", "")
         return None, "robots.txt를 확인하지 못해 건너뜀" + (f" ({why})" if why else "")
+    is_korea_kr = urlparse(src["url"]).netloc.lower().endswith("korea.kr") and src.get("query")
     try:
-        r = requests.get(src["url"], headers={"User-Agent": UA}, timeout=TIMEOUT)
+        if is_korea_kr:
+            today = dt.datetime.now(KST).date()
+            form = {"pageIndex": "1", "metaId": "job", "srchWord": src["query"],
+                    "startDate": (today - dt.timedelta(days=365)).isoformat(),
+                    "endDate": today.isoformat(), "srchType": "", "srchDateType": "regiDate", "period": ""}
+            r = requests.post(src["url"], data=form, headers={"User-Agent": UA}, timeout=TIMEOUT)
+        else:
+            r = requests.get(src["url"], headers={"User-Agent": UA}, timeout=TIMEOUT)
         r.raise_for_status()
     except requests.RequestException as e:
         return None, f"접속 실패: {e.__class__.__name__}"
-    jobs = pick_parser(src["url"])(r.content, src["url"])
+    if is_korea_kr:
+        jobs = parse_korea_kr(r.content, src["url"], src["query"])
+    else:
+        jobs = pick_parser(src["url"])(r.content, src["url"])
     if not jobs:
         return None, "공고를 찾지 못함(페이지 구조가 바뀌었을 수 있음)"
     return jobs, "정상"

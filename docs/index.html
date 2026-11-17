@@ -34,7 +34,7 @@
 <div class="wrap">
   <h1>채용공고 모음</h1>
   <div class="meta" id="meta">불러오는 중…</div>
-  <input type="search" id="q" placeholder="검색 (예: 기간제, 사무, 시설)" autocomplete="off">
+  <input type="search" id="q" placeholder="검색 (쉼표는 또는, 공백은 그리고) 예: 기간제, 공무직" autocomplete="off">
   <div class="chips" id="chips"></div>
   <div id="notices"></div>
   <ul id="list"></ul>
@@ -59,12 +59,19 @@
   }
 
   function render() {
-    var d = state.data, q = state.q.trim().toLowerCase();
+    var d = state.data;
+    // 쉼표(,)는 "또는", 공백은 "그리고". 예: "기간제, 공무직 사무" = 기간제 또는 (공무직 그리고 사무)
+    var groups = state.q.toLowerCase().split(",").map(function (g) {
+      return g.trim().split(/\s+/).filter(Boolean);
+    }).filter(function (g) { return g.length; });
     var jobs = Object.keys(d.jobs).map(function (k) { return d.jobs[k]; });
     jobs = jobs.filter(function (j) {
       if (state.source && j.source !== state.source) return false;
-      if (!q) return true;
-      return (j.title + " " + (j.dept || "") + " " + j.source).toLowerCase().indexOf(q) >= 0;
+      if (!groups.length) return true;
+      var text = (j.title + " " + (j.dept || "") + " " + j.source).toLowerCase();
+      return groups.some(function (g) {
+        return g.every(function (t) { return text.indexOf(t) >= 0; });
+      });
     });
     jobs.sort(function (a, b) {
       return (b.date || "").localeCompare(a.date || "") || b.first_seen.localeCompare(a.first_seen);
@@ -103,7 +110,7 @@
       var s = srcs[name];
       if (s.manual) {
         box.appendChild(el("div", { "class": "notice" }, [
-          document.createTextNode(name + ": 자동 수집이 허용되지 않아 직접 확인이 필요합니다. "),
+          document.createTextNode(name + ": 자동 수집을 하지 않는 게시판입니다. 직접 확인해 주세요. "),
           el("a", { href: s.url, target: "_blank", rel: "noopener", text: "채용 게시판 열기" })
         ]));
       } else if (!s.ok) {
@@ -117,7 +124,9 @@
     var n = Object.keys(d.jobs).length;
     $("meta").textContent = "마지막 확인 " + (d.updated ? d.updated.slice(0, 16).replace("T", " ") : "-") + " · 공고 " + n + "건";
     buildChips(); buildNotices(); render();
-  }).catch(function () { $("meta").textContent = "데이터를 불러오지 못했습니다."; });
+  }).catch(function () {
+    $("meta").textContent = "아직 수집된 공고가 없습니다. 저장소의 Actions 탭에서 crawl을 한 번 실행하면 나타납니다.";
+  });
 
   $("q").addEventListener("input", function (e) { state.q = e.target.value; if (state.data) render(); });
 })();

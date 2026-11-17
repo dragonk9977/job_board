@@ -1,4 +1,5 @@
-기관명,URL,사용,방식
-의정부시청,https://www.ui4u.go.kr/portal/saeol/gosiList.do?seCode=05&mId=0301110000,Y,자동
-의정부도시공사,https://www.uiuc.or.kr/companyNotice/employmentPage/employment/list.do,Y,자동
-도봉구시설관리공단,https://www.dobongsiseol.or.kr/contents/employment.html?menu1=1&menu2=4&menu3=2,Y,링크만
+기관명,URL,사용,방식,검색어
+의정부시청(나라일터),https://www.korea.kr/archive/recruitInfoList.do,Y,자동,의정부시
+의정부시청 게시판,https://www.ui4u.go.kr/portal/saeol/gosiList.do?seCode=05&mId=0301110000,Y,링크만,
+의정부도시공사,https://www.uiuc.or.kr/companyNotice/employmentPage/employment/list.do,Y,자동,
+도봉구시설관리공단,https://www.dobongsiseol.or.kr/contents/employment.html?menu1=1&menu2=4&menu3=2,Y,링크만,
