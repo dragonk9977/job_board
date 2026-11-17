@@ -168,7 +168,7 @@
  },
  "sources": {
   "도봉구시설관리공단": {
-   "checked": "2026-11-17T16:42:38+09:00",
+   "checked": "2026-11-17T16:48:13+09:00",
    "last_ok": "",
    "manual": true,
    "ok": true,
@@ -176,21 +176,21 @@
    "url": "https://www.dobongsiseol.or.kr/contents/employment.html?menu1=1&menu2=4&menu3=2"
   },
   "의정부도시공사": {
-   "checked": "2026-11-17T16:42:38+09:00",
-   "last_ok": "2026-11-17T16:42:38+09:00",
+   "checked": "2026-11-17T16:48:13+09:00",
+   "last_ok": "2026-11-17T16:48:13+09:00",
    "manual": false,
    "ok": true,
    "status": "정상",
    "url": "https://www.uiuc.or.kr/companyNotice/employmentPage/employment/list.do"
   },
   "의정부시청": {
-   "checked": "2026-11-17T16:42:38+09:00",
+   "checked": "2026-11-17T16:48:13+09:00",
    "last_ok": "",
    "manual": false,
    "ok": false,
-   "status": "robots.txt를 확인하지 못해 건너뜀",
+   "status": "robots.txt를 확인하지 못해 건너뜀 (ConnectTimeout)",
    "url": "https://www.ui4u.go.kr/portal/saeol/gosiList.do?seCode=05&mId=0301110000"
   }
  },
- "updated": "2026-11-17T16:42:38+09:00"
+ "updated": "2026-11-17T16:48:13+09:00"
 }
