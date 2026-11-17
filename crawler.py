@@ -326,6 +326,15 @@ def load_state():
 
 
 def main():
+    # 시험 메일: Actions에서 "Run workflow"의 체크박스를 켰을 때만 실행. 수집·저장은 하지 않는다.
+    if os.environ.get("TEST_MAIL", "").strip().lower() == "true":
+        sample = [{"source": "시험", "title": "메일 설정 확인용 시험 메일입니다",
+                   "date": dt.datetime.now(KST).date().isoformat(),
+                   "url": os.environ.get("SITE_URL") or "https://github.com"}]
+        ok = send_mail(sample)
+        print("시험 메일 결과:", "성공" if ok else "실패")
+        return 0 if ok else 1
+
     state = load_state()
     sources = load_sources()
     include, exclude = load_keywords()
