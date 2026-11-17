@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>채용공고 모음</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --text:#1c1f24; --sub:#6b7280; --line:#e5e7eb; --accent:#2563eb; --new:#dc2626; --warn:#b45309; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111418; --card:#1a1f26; --text:#e8eaed; --sub:#9aa3af; --line:#2a313b; --accent:#6ea3ff; --new:#ff6b6b; --warn:#f0b35a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
+  .wrap { max-width:820px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; margin:8px 0 2px; }
+  .meta { color:var(--sub); font-size:13px; margin-bottom:12px; }
+  input[type=search] { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text); font-size:16px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
+  .chip { border:1px solid var(--line); background:var(--card); color:var(--text); padding:6px 11px; border-radius:999px; font-size:13px; cursor:pointer; }
+  .chip[aria-pressed=true] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .notice { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--warn); border-radius:8px; padding:9px 12px; margin:6px 0; font-size:13px; }
+  .notice a { color:var(--accent); }
+  ul { list-style:none; margin:12px 0 0; padding:0; }
+  li { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px; }
+  li a { color:var(--text); text-decoration:none; font-weight:600; display:block; }
+  li a:hover { color:var(--accent); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:12px; color:var(--sub); margin-top:5px; }
+  .src { color:var(--accent); font-weight:600; }
+  .new { background:var(--new); color:#fff; border-radius:4px; padding:0 5px; font-size:11px; font-weight:700; }
+  .empty { text-align:center; color:var(--sub); padding:36px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>채용공고 모음</h1>
+  <div class="meta" id="meta">불러오는 중…</div>
+  <input type="search" id="q" placeholder="검색 (예: 기간제, 사무, 시설)" autocomplete="off">
+  <div class="chips" id="chips"></div>
+  <div id="notices"></div>
+  <ul id="list"></ul>
+  <div class="empty" id="empty" hidden>조건에 맞는 공고가 없습니다.</div>
+</div>
+<script>
+(function () {
+  var state = { data: null, source: "", q: "" };
+  var $ = function (id) { return document.getElementById(id); };
+
+  function el(tag, props, children) {
+    var e = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (k) {
+      if (k === "text") e.textContent = props[k]; else e.setAttribute(k, props[k]);
+    });
+    (children || []).forEach(function (c) { e.appendChild(c); });
+    return e;
+  }
+
+  function isNew(job) {
+    return Date.now() - new Date(job.first_seen).getTime() < 24 * 3600 * 1000;
+  }
+
+  function render() {
+    var d = state.data, q = state.q.trim().toLowerCase();
+    var jobs = Object.keys(d.jobs).map(function (k) { return d.jobs[k]; });
+    jobs = jobs.filter(function (j) {
+      if (state.source && j.source !== state.source) return false;
+      if (!q) return true;
+      return (j.title + " " + (j.dept || "") + " " + j.source).toLowerCase().indexOf(q) >= 0;
+    });
+    jobs.sort(function (a, b) {
+      return (b.date || "").localeCompare(a.date || "") || b.first_seen.localeCompare(a.first_seen);
+    });
+    var ul = $("list");
+    ul.textContent = "";
+    jobs.slice(0, 300).forEach(function (j) {
+      var link = el("a", { href: j.url, target: "_blank", rel: "noopener", text: j.title });
+      var row = el("div", { "class": "row" }, [el("span", { "class": "src", text: j.source })]);
+      if (j.dept) row.appendChild(el("span", { text: j.dept }));
+      if (j.date) row.appendChild(el("span", { text: j.date }));
+      if (j.status) row.appendChild(el("span", { text: j.status }));
+      if (isNew(j)) row.appendChild(el("span", { "class": "new", text: "NEW" }));
+      ul.appendChild(el("li", {}, [link, row]));
+    });
+    $("empty").hidden = jobs.length > 0;
+  }
+
+  function buildChips() {
+    var box = $("chips");
+    box.textContent = "";
+    var names = [""].concat(Object.keys(state.data.sources));
+    names.forEach(function (n) {
+      var b = el("button", { "class": "chip", type: "button", text: n || "전체" });
+      b.setAttribute("aria-pressed", String(state.source === n));
+      b.addEventListener("click", function () { state.source = n; buildChips(); render(); });
+      box.appendChild(b);
+    });
+  }
+
+  function buildNotices() {
+    var box = $("notices");
+    box.textContent = "";
+    var srcs = state.data.sources;
+    Object.keys(srcs).forEach(function (name) {
+      var s = srcs[name];
+      if (s.manual) {
+        box.appendChild(el("div", { "class": "notice" }, [
+          document.createTextNode(name + ": 자동 수집이 허용되지 않아 직접 확인이 필요합니다. "),
+          el("a", { href: s.url, target: "_blank", rel: "noopener", text: "채용 게시판 열기" })
+        ]));
+      } else if (!s.ok) {
+        box.appendChild(el("div", { "class": "notice", text: name + ": 최근 수집 실패 (" + s.status + ")" + (s.last_ok ? " · 마지막 성공 " + s.last_ok.slice(0, 16).replace("T", " ") : "") }));
+      }
+    });
+  }
+
+  fetch("jobs.json?t=" + Date.now()).then(function (r) { return r.json(); }).then(function (d) {
+    state.data = d;
+    var n = Object.keys(d.jobs).length;
+    $("meta").textContent = "마지막 확인 " + (d.updated ? d.updated.slice(0, 16).replace("T", " ") : "-") + " · 공고 " + n + "건";
+    buildChips(); buildNotices(); render();
+  }).catch(function () { $("meta").textContent = "데이터를 불러오지 못했습니다."; });
+
+  $("q").addEventListener("input", function (e) { state.q = e.target.value; if (state.data) render(); });
+})();
+</script>
+</body>
+</html>
