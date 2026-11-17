@@ -94,6 +94,7 @@ def matches(job, include, exclude):
 
 # ---------------------------------------------------------------- robots.txt
 _robots_cache = {}
+_robots_reason = {}
 
 
 def robots_allows(url):
@@ -101,14 +102,23 @@ def robots_allows(url):
     p = urlparse(url)
     base = f"{p.scheme}://{p.netloc}"
     if base not in _robots_cache:
-        try:
-            r = requests.get(base + "/robots.txt", headers={"User-Agent": UA}, timeout=TIMEOUT)
-        except requests.RequestException:
+        r, err = None, ""
+        for _ in range(2):  # 일시 오류 대비 1회 재시도
+            try:
+                r = requests.get(base + "/robots.txt", headers={"User-Agent": UA}, timeout=TIMEOUT)
+                break
+            except requests.RequestException as e:
+                err = e.__class__.__name__
+        if r is None:
+            _robots_reason[base] = err
+            print(f"[진단] {base}/robots.txt 접속 실패: {err}")
             _robots_cache[base] = None
         else:
             if 400 <= r.status_code < 500:
                 _robots_cache[base] = True  # robots.txt 없음 = 제한 없음
             elif r.status_code >= 500:
+                _robots_reason[base] = f"HTTP {r.status_code}"
+                print(f"[진단] {base}/robots.txt 응답 오류: HTTP {r.status_code}")
                 _robots_cache[base] = None
             else:
                 rp = robotparser.RobotFileParser()
@@ -215,7 +225,9 @@ def crawl_source(src):
     if allowed is False:
         return None, "robots.txt가 자동 수집을 금지함"
     if allowed is None:
-        return None, "robots.txt를 확인하지 못해 건너뜀"
+        p = urlparse(src["url"])
+        why = _robots_reason.get(f"{p.scheme}://{p.netloc}", "")
+        return None, "robots.txt를 확인하지 못해 건너뜀" + (f" ({why})" if why else "")
     try:
         r = requests.get(src["url"], headers={"User-Agent": UA}, timeout=TIMEOUT)
         r.raise_for_status()
