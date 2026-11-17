@@ -281,15 +281,20 @@ def crawl_source(src):
 
 # ---------------------------------------------------------------- 메일
 def send_mail(jobs):
-    host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-    port = int(os.environ.get("SMTP_PORT", "465"))
-    user = os.environ.get("SMTP_USER", "")
-    pw = os.environ.get("SMTP_PASS", "")
-    to = os.environ.get("MAIL_TO", "")
+    # GitHub Actions는 설정하지 않은 변수도 빈 문자열로 넘기므로 `or`로 기본값을 쓴다.
+    host = os.environ.get("SMTP_HOST", "").strip() or "smtp.gmail.com"
+    try:
+        port = int(os.environ.get("SMTP_PORT", "").strip() or 465)
+    except ValueError:
+        print("[오류] SMTP_PORT가 숫자가 아닙니다.")
+        return False
+    user = os.environ.get("SMTP_USER", "").strip()
+    pw = os.environ.get("SMTP_PASS", "").strip()
+    to = os.environ.get("MAIL_TO", "").strip()
     if not (user and pw and to):
         print("[경고] SMTP_USER/SMTP_PASS/MAIL_TO 미설정: 메일을 보내지 않음")
         return False
-    site = os.environ.get("SITE_URL", "")
+    site = os.environ.get("SITE_URL", "").strip()
     lines_html, lines_txt = [], []
     for j in jobs:
         lines_html.append(
