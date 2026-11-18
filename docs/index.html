@@ -9,6 +9,20 @@
   @media (prefers-color-scheme: dark) {
     :root { --bg:#111418; --card:#1a1f26; --text:#e8eaed; --sub:#9aa3af; --line:#2a313b; --accent:#6ea3ff; --new:#ff6b6b; --warn:#f0b35a; }
   }
+  /* 기관별 색상: --tint(배경), --acc(강조색). 어두운 화면에서는 배경만 어둡게 바뀐다. */
+  .c0 { --tint:#e8f0fe; --acc:#2563eb; }
+  .c1 { --tint:#e6f6ec; --acc:#15803d; }
+  .c2 { --tint:#fff4e0; --acc:#b45309; }
+  .c3 { --tint:#fde8f0; --acc:#be185d; }
+  .c4 { --tint:#f0e9fd; --acc:#7c3aed; }
+  .c5 { --tint:#e0f5f5; --acc:#0f766e; }
+  .c6 { --tint:#fdeceb; --acc:#c2410c; }
+  .c7 { --tint:#f1f3e0; --acc:#4d7c0f; }
+  .cn { --tint:var(--card); --acc:#6b7280; }
+  @media (prefers-color-scheme: dark) {
+    .c0 { --tint:#1c2740; } .c1 { --tint:#16301f; } .c2 { --tint:#35290f; } .c3 { --tint:#381a27; }
+    .c4 { --tint:#2a2040; } .c5 { --tint:#123234; } .c6 { --tint:#3a1d19; } .c7 { --tint:#2c3012; }
+  }
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:15px/1.5 -apple-system, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif; }
   .wrap { max-width:820px; margin:0 auto; padding:16px; }
@@ -16,16 +30,17 @@
   .meta { color:var(--sub); font-size:13px; margin-bottom:12px; }
   input[type=search] { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--text); font-size:16px; }
   .chips { display:flex; flex-wrap:wrap; gap:6px; margin:10px 0; }
-  .chip { border:1px solid var(--line); background:var(--card); color:var(--text); padding:6px 11px; border-radius:999px; font-size:13px; cursor:pointer; }
-  .chip[aria-pressed=true] { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .chip { border:1px solid var(--acc, var(--line)); background:var(--tint, var(--card)); color:var(--text); padding:6px 11px; border-radius:999px; font-size:13px; cursor:pointer; }
+  .chip[aria-pressed=true] { background:var(--acc, var(--accent)); border-color:var(--acc, var(--accent)); color:#fff; }
   .notice { background:var(--card); border:1px solid var(--line); border-left:3px solid var(--warn); border-radius:8px; padding:9px 12px; margin:6px 0; font-size:13px; }
+  .notice.manual { background:var(--tint); border-left-color:var(--acc); }
   .notice a { color:var(--accent); }
   ul { list-style:none; margin:12px 0 0; padding:0; }
-  li { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:8px; }
+  li { background:var(--tint, var(--card)); border:1px solid var(--line); border-left:5px solid var(--acc, var(--line)); border-radius:12px; padding:12px 14px; margin-bottom:8px; }
   li a { color:var(--text); text-decoration:none; font-weight:600; display:block; }
   li a:hover { color:var(--accent); }
   .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:12px; color:var(--sub); margin-top:5px; }
-  .src { color:var(--accent); font-weight:600; }
+  .src { background:var(--acc, var(--accent)); color:#fff; font-weight:600; border-radius:999px; padding:1px 9px; }
   .new { background:var(--new); color:#fff; border-radius:4px; padding:0 5px; font-size:11px; font-weight:700; }
   .empty { text-align:center; color:var(--sub); padding:36px 0; }
 </style>
@@ -53,6 +68,24 @@
     (children || []).forEach(function (c) { e.appendChild(c); });
     return e;
   }
+
+  // 기관 이름으로 색을 정한다(이름이 같으면 항상 같은 색). 같은 색이 겹치지 않게 비어 있는 색으로 옮긴다.
+  var PALETTE = 8;
+  var colorMap = {};
+  function buildColors(names) {
+    var used = {}, count = 0;
+    colorMap = {};
+    names.slice().sort().forEach(function (n) {
+      var h = 0;
+      for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0;
+      if (count >= PALETTE) { used = {}; count = 0; }
+      var k = h % PALETTE;
+      while (used[k]) k = (k + 1) % PALETTE;
+      used[k] = true; count++;
+      colorMap[n] = "c" + k;
+    });
+  }
+  function colorOf(name) { return colorMap[name] || "cn"; }
 
   function isNew(job) {
     return Date.now() - new Date(job.first_seen).getTime() < 24 * 3600 * 1000;
@@ -85,7 +118,7 @@
       if (j.date) row.appendChild(el("span", { text: j.date }));
       if (j.status) row.appendChild(el("span", { text: j.status }));
       if (isNew(j)) row.appendChild(el("span", { "class": "new", text: "NEW" }));
-      ul.appendChild(el("li", {}, [link, row]));
+      ul.appendChild(el("li", { "class": colorOf(j.source) }, [link, row]));
     });
     $("empty").hidden = jobs.length > 0;
   }
@@ -95,7 +128,7 @@
     box.textContent = "";
     var names = [""].concat(Object.keys(state.data.sources));
     names.forEach(function (n) {
-      var b = el("button", { "class": "chip", type: "button", text: n || "전체" });
+      var b = el("button", { "class": "chip" + (n ? " " + colorOf(n) : ""), type: "button", text: n || "전체" });
       b.setAttribute("aria-pressed", String(state.source === n));
       b.addEventListener("click", function () { state.source = n; buildChips(); render(); });
       box.appendChild(b);
@@ -109,7 +142,7 @@
     Object.keys(srcs).forEach(function (name) {
       var s = srcs[name];
       if (s.manual) {
-        box.appendChild(el("div", { "class": "notice" }, [
+        box.appendChild(el("div", { "class": "notice manual " + colorOf(name) }, [
           document.createTextNode(name + ": 자동 수집을 하지 않는 게시판입니다. 직접 확인해 주세요. "),
           el("a", { href: s.url, target: "_blank", rel: "noopener", text: "채용 게시판 열기" })
         ]));
@@ -121,6 +154,7 @@
 
   fetch("jobs.json?t=" + Date.now()).then(function (r) { return r.json(); }).then(function (d) {
     state.data = d;
+    buildColors(Object.keys(d.sources));
     var n = Object.keys(d.jobs).length;
     $("meta").textContent = "마지막 확인 " + (d.updated ? d.updated.slice(0, 16).replace("T", " ") : "-") + " · 공고 " + n + "건";
     buildChips(); buildNotices(); render();
