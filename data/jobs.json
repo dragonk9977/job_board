@@ -267,7 +267,7 @@
  },
  "sources": {
   "도봉구시설관리공단": {
-   "checked": "2026-11-21T09:45:54+09:00",
+   "checked": "2026-11-21T17:13:04+09:00",
    "last_ok": "",
    "manual": true,
    "ok": true,
@@ -275,15 +275,15 @@
    "url": "https://www.dobongsiseol.or.kr/contents/employment.html?menu1=1&menu2=4&menu3=2"
   },
   "의정부도시공사": {
-   "checked": "2026-11-21T09:45:54+09:00",
-   "last_ok": "2026-11-21T09:45:54+09:00",
+   "checked": "2026-11-21T17:13:04+09:00",
+   "last_ok": "2026-11-21T17:13:04+09:00",
    "manual": false,
    "ok": true,
    "status": "정상",
    "url": "https://www.uiuc.or.kr/companyNotice/employmentPage/employment/list.do"
   },
   "의정부시청 게시판": {
-   "checked": "2026-11-21T09:45:54+09:00",
+   "checked": "2026-11-21T17:13:04+09:00",
    "last_ok": "",
    "manual": true,
    "ok": true,
@@ -291,13 +291,13 @@
    "url": "https://www.ui4u.go.kr/portal/saeol/gosiList.do?seCode=05&mId=0301110000"
   },
   "의정부시청(나라일터)": {
-   "checked": "2026-11-21T09:45:54+09:00",
-   "last_ok": "2026-11-21T09:45:54+09:00",
+   "checked": "2026-11-21T17:13:04+09:00",
+   "last_ok": "2026-11-21T17:13:04+09:00",
    "manual": false,
    "ok": true,
    "status": "정상",
    "url": "https://www.korea.kr/archive/recruitInfoList.do"
   }
  },
- "updated": "2026-11-21T09:45:54+09:00"
+ "updated": "2026-11-21T17:13:04+09:00"
 }
